@@ -1,7 +1,7 @@
 ---
 title: "Homework2"
 output: html_document
-date: "2025-01-27"
+date: "2025-01-26"
 ---
 
 ```{r setup, include=FALSE}
@@ -16,7 +16,7 @@ billboard <- read.csv("billboard.csv")
 
 ## Name: Varun Bandaru
 ## UID: VVB287
-Link to github repository: [Link]()
+Link to github repository: [Link](https://github.com/VarunBandaru1/SDS315/blob/b27b7a2b0da523bec0108b41bc023af68b74943b/SDS315_Homework2.Rmd)
 
 ## ***Problem 1***
 
