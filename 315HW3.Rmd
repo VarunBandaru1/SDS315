@@ -1,0 +1,177 @@
+---
+title: "Homework3"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-02-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(tidyverse)
+library(mosaic)
+
+
+```
+
+vvb287
+link to github: 
+
+
+## **Question 1**
+
+## ***1A***
+```{r}
+gasprices <-read.csv("gasprices.csv")
+
+bootComp = do(10000) * diffmean(Price ~ Competitors, data = resample(gasprices))
+confint(bootComp, level = .95)
+
+
+ggplot(bootComp, aes(x = diffmean)) + geom_histogram(binwidth = 0.005, fill = "darkgreen" , color = "black") + labs(title = "Bootstrapped Distribution of Mean Price Differences (Competitors in View vs Not in View)", x = "Mean Price Difference ($)",y = "Frequency") +theme_minimal()
+```
+
+Claim: as stations charge more if they lack direct competition in sight. Evidence: As seen in the graph above, 0 is included in the 95% confidence interval which means there is no statistical evidence that would validate the claim. Conclusion: The Claim is not supported by the display of data meaning gas stations that have competitors in sight do not charge less than gas stations that do not have other gas stations in sight. 
+
+## ***1B***
+
+```{r}
+
+bootArea = do(10000) * cor(Price ~ Income, data = resample(gasprices)) 
+confint(bootArea, level = .95)
+
+ggplot(bootArea, aes(x = cor)) +
+  geom_histogram(binwidth = 0.01, fill = "red", color = "black") +labs(title = "Bootstrapped Distribution of Correlation (Income and Price)",
+       x = "Correlation Coefficient", y = "Frequency") + theme_minimal()
+
+```
+
+Claim: The richer the area, the higher the gas prices. Evidence: As seen in the graph the correlation between income and price seem to be around 0.4. This means that there is a moderate correlation between the 2 factors. Conclusion: There is reasonable evidence that the richer the area, the higher the gas prices because the r-value is moderate(0.2-0.6). 
+
+## ***1C***
+
+```{r}
+
+bootLight = do(10000) * diffmean(Price ~ Stoplight, data = resample(gasprices))
+confint(bootLight, level = .95)
+
+ggplot(bootLight, aes(x = diffmean)) + geom_histogram(binwidth = 0.005, fill = "purple" , color = "black") + labs(title = "Bootstrapped Distribution of Mean Price Differences (Stoplight vs Non-Stoplight)", x = "Mean Price Difference ($)",y = "Frequency") +theme_minimal()
+```
+
+Claim: as stations at stoplights charge more. Evidence: As seen above, 0 is included in the 95% confidence interval meaning that there is no statistical evidence that validates this claim. Conclusion: There is no statistical evidence that gas stations at gaslights charge more since 0 is within the interval of (-0.038, 0.031).
+
+## ***1D***
+
+```{r}
+bootHighway = do(10000) * diffmean(Price ~ Highway, data = resample(gasprices))
+confint(bootHighway, level = .95)
+
+ggplot(bootHighway, aes(x = diffmean)) + geom_histogram(binwidth = 0.005, fill = "lightgreen" , color = "black") + labs(title = "Bootstrapped Distribution of Mean Price Differences (Highway vs Non-Highway)", x = "Mean Price Difference ($)",y = "Frequency") +theme_minimal()
+
+```
+
+Claim: Gas stations with direct highway access charge more. Evidence: Since 0 is not included in the interval (0.009, 0.081) we can be 95% confident that there is statistical evidence that validates this claim. Conclusion: There is statistical evidence that shows that gas stations with direct highway access charge more than a gas station without direct highway access. 
+
+## ***1E***
+
+```{r}
+
+gasprices$Shell <- "Non-Shell"  # Default to Non-Shell
+gasprices$Shell[gasprices$Brand == "Shell"] <- "Shell"
+
+
+bootShell = do(10000) * diffmean(Price ~ Shell, data = resample(gasprices))
+confint(bootShell, level = .95)
+
+ggplot(bootShell, aes(x = diffmean)) + geom_histogram(binwidth = 0.005, fill = "blue" , color = "black") + labs(title = "Bootstrapped Distribution of Mean Price Differences (Shell vs Non-Shell)", x = "Mean Price Difference ($)",y = "Frequency") +theme_minimal()
+```
+
+Claim: Shell charges more than all other non-shell brands. Evidence: Since 0 is included in the interval (-0.009, 0.068) we can be 95% confident that there is no statistical evidence that validates this claim. Conclusion: There is no statistical evidence that shows that Shell charges more than all other non-Shell brands. 
+
+## **Question 2**
+
+
+```{r}
+sclass <- read.csv("sclass.csv")
+```
+
+## ***Part A***
+
+```{r}
+sclass_63AMG_2011 <- subset(sclass, trim == "63 AMG" & year == 2011)
+boot_mileage <- do(10000) * mean(~mileage, data = resample(sclass_63AMG_2011)) 
+confint(boot_mileage, level = 0.95)
+```
+
+A 95% bootstrap confidence interval for the average mileage of 2011 S-Class 63 AMGs is (26253, 31799) miles.
+
+## ***Part B***
+
+```{r}
+sclass_550_2014 <- subset(sclass, trim == "550" & year == 2014) |> 
+  mutate(isBlack = color == "Black")
+
+boot_black <- do(10000) * mean(~isBlack, data = resample(sclass_550_2014)) 
+confint(boot_black, level = 0.95)
+
+```
+
+A 95% bootstrap confidence interval for the proportion of all 2014 S-Class 550s that were painted black is (0.417, 0.453).
+
+## **Question 3**
+
+## ***Part A***
+```{r}
+pilotSurvey <- read.csv("nbc_pilotsurvey.csv")
+happyShows <- filter(pilotSurvey, Show == "Living with Ed" | Show == "My Name is Earl")
+
+bootHappyShows <- do(10000) * diffmean(Q1_Happy ~ Show, data = resample(happyShows)) 
+confint(bootHappyShows, level = 0.95)
+
+ggplot(bootHappyShows, aes(x = diffmean)) + geom_histogram(binwidth = 0.005, fill = "blue" , color = "black") + labs(title = "Difference in mean viewer responses (Q1_Happy)", x = "Mean Difference",y = "Frequency") +theme_minimal()
+```
+
+Question: Is there evidence that one show consistently producers a higher mean Q1_Happy response among viewers? Approach: Making use of bootstrapping, I was able to estimate the difference in mean happiness ratings from the shows. Through this I also made a 95% confidence interval which gave me actionable feedback where I could draw a statistically supported conclusion. Results: The 95% confidence interval is (-0.395, 0.105), and since 0 is included in this interval there is an uncertainty  in saying one show is better than the other and could possibly be from random variation. Conclusion: There is not enough statistical evidence to say that there is a significant difference in Q1_Happy for each show. 
+
+## ***Part B***
+
+```{r}
+annoyingShows <- filter(pilotSurvey, Show == "The Biggest Loser" | Show == "The Apprentice: Los Angeles")
+bootAnnoyed <- do(10000) * diffmean(Q1_Annoyed ~ Show, data = resample(annoyingShows)) 
+confint(bootAnnoyed, level = 0.95)
+
+ggplot(bootAnnoyed, aes(x = diffmean)) + geom_histogram(binwidth = .01, fill ="green", color = "black") + labs(title = "Difference in Mean Viewer Responses (Q1_Annoyed)",   x = "Mean Difference", y = "Frequency") + theme_minimal()
+```
+
+Question: Is there evidence that one show consistently produces a higher mean Q1_Annoyed response among viewers? Approach: Similar to the part A, I used bootstrapping to estimate the difference in mean annoyance ratings for both of the shows. Furthermore, I constructed a 95% confidence interval so that I would be able to reach a conclusion with definitive numbers instead of estimating based on the graph. Results: The 95% confidence interval is (-0.523, -0.021), and since 0 is not included in this interval we can be 95% confident that there is a difference in rating between the shows. Conclusion: There is a significant difference that using the Q1_Annoyed data that one show had a higher amount of annoyance than the other. 
+
+## ***Part C***
+
+```{r}
+
+confusedShows <- mutate(filter(pilotSurvey, Show == "Dancing with the Stars"), Confusing = Q2_Confusing >= 4)
+
+bootConfused <- do(10000) * mean(~Confusing, data = resample(confusedShows)) 
+confint(bootConfused, level = 0.95)
+
+ggplot(bootConfused, aes(x = mean)) + geom_histogram(binwidth = .01, fill ="green", color = "black") + labs(title = "Difference in Mean Viewer Responses (Confused)",   x = "Mean", y = "Frequency") + theme_minimal()
+```
+
+Question: What proportion of of American TV watchers would we expect to give a response of 4 or greater to the "Q2_Confusing" question. Approach: I bootstrapped the sample to estimate the proportion of viewers that found the show confusing. Furthermore, I made a 95% confidence interval so that I could use exact numbers to analyze the findings. Evidence: The 95% confidence interval is (0.039, 0.116), representing the proportion of viewers who found this show confusing. Furthermore, this interval does not include 0 so we can be 95% sure that there is statistical evidence that viewers found this show confusing. Conclusion: The proportion on viewers that found "Dancing with the Stars" confusing is between 0.039 and 0.116. 
+
+## **Question 4**
+
+```{r}
+ebay <- read.csv("ebay.csv")
+
+ebay <- mutate(ebay, revenue = rev_after / rev_before)
+
+bootRevenue <- do(10000) * diffmean(revenue ~ adwords_pause, data = resample(ebay))
+confint(bootRevenue, level = .95)
+
+ggplot(bootRevenue, aes(x = diffmean)) + geom_histogram(binwidth = .01, fill ="green", color = "black") + labs(title = "Difference in Mean Viewer Responses (Confused)",   x = "Difference in Mean", y = "Frequency") + theme_minimal()
+
+```
+
+Question: Is the revenue ratio between the treatment and control DMAs. Approach: I compared the revenue ratio between the ads paused and the ads in the continued groups which gives me data relating to the impact of search advertising. Following this, I bootstrapped the data set to give a better estimation of the difference in means of revenue ratio and finally made a 95% confidence interval. Evidence: The 95% confidence interval is (-0.091, -0.013) which does not include 0 showing there is statistical data to ck up the claim. Conclusion: Based on the confidence interval I can be 95% confidence that paid search advertising contributes to a higher revenue for eBay.
