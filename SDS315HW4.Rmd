@@ -1,0 +1,176 @@
+---
+title: "Untitled"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: "2025-02-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library("knitr")
+library("dplyr")
+```
+
+Varun Bandaru
+
+vvb287
+
+Link to Github:
+
+https://github.com/VarunBandaru1/SDS315
+
+## **Question 1**
+```{r}
+
+# Set parameters
+numTrades <- 2021  
+probFlagged <- 0.024  
+observedFlags <- 70
+numSimulations <- 100000 
+
+simulatedFlags <- rbinom(numSimulations, size = numTrades, prob = probFlagged)
+
+# Compute p-value: proportion of simulations with at least as many flags as observed
+p_value <- mean(simulatedFlags >= observedFlags)
+
+# Plot the probability distribution
+hist(simulatedFlags, breaks = 30, probability = TRUE, col = "blue", border = "black", main = "Monte Carlo Distribution of Flagged Trades Under Null Hypothesis",
+     xlab = "Number of Flagged Trades")
+abline(v = observedFlags, col = "red", lwd = 2, lty = 2)  # Observed value
+
+# Output p-value
+print(paste("P-Value:", p_value))
+
+
+```
+
+Null Hypothesis: The null hypothesis is the rate at which Iron Bank employees' trades are flagged is the same as the general baseline flagging which is p = 0.024 (p is the true proportion of flagged trades)
+Test Statistics: For this statistic I used a binomial distribution based around the total number of traders and the expected proportion of flagging under the null hypothesis. After simulating this 100,000 times I compared it to the 70 flagged results that were observed.
+P-value: 0.00178 (Changes based each run because of Monte Carlo variance)
+The p-value is less than 0.05 which is very small. This suggests that the observed number of flagged trades of 70 is very unlikely to have occurred by random chance under the null hypothesis. Hence, we reject the null hypothesis and have statistical evidence that Iron Bank is likely trading a more suspicious way than what is to be expected under normal conditions. 
+
+## **Question 2**
+
+
+```{r}
+
+inspects <- 50
+obs <- 8
+probViolate <- 0.03
+sims <- 100000
+
+simulatedViolations <- rbinom(sims, size = inspects, prob = probViolate)
+
+p_value <- mean(simulatedViolations >= obs)
+
+hist(simulatedViolations, probability = TRUE,
+     main = "Distribution of Simulated Violations Under Null Hypothesis", xlab = "Number of Violations", col = "lightblue")
+abline(v = obs, col = "red", lwd = 2)
+
+print(paste("P-Value:", p_value))
+
+```
+
+Null Hypothesis: The violation rate at Gourmet Bites is the same as the citywide average of p = 0.03 where p is the true probability of a restaurant getting a health code violation.
+Test Statistic: Based on the null hypothesis I took a binomial distribution with 50 being the number of inspections and .03 is the expected proportion of violations. This will then be compared to the 8 violations that was found.
+P-value: 0.00011
+
+The p-value is less than 0.05 which means it is very low. This suggests that Gourmet Bites' violation rate is much higher than what is to be expected from normal conditions. There is reasonable statistical evidence to say that this restaurant has more health violations than what would normally be expected. Hence, we reject the null hypothesis.
+
+## **Question 3**
+
+```{r}
+groups <- c("Group 1", "Group 2", "Group 3", "Group 4", "Group 5")
+popProp <- c(30, 25, 20, 15, 10)
+total_jurors <- 240 
+expected_counts <- round(popProp / 100 * total_jurors)
+
+observed_counts <- c(85, 56, 59, 27, 13)
+
+DiffCounts <- observed_counts - expected_counts
+DiffCountsSqr <- DiffCounts^2
+chiSquare <- DiffCountsSqr / expected_counts
+
+jury_table <- data.frame(
+  Group = groups, Observed_Count = observed_counts, Expected_Count = expected_counts, DiffCounts = DiffCounts, DiffCountsSqr = DiffCountsSqr, ChiSquare = chiSquare)
+
+kable(jury_table, caption = "Jury Selection Data and Chi-Square Calculations")
+
+chisqTest <- chisq.test(observed_counts, p = popProp / sum(popProp), rescale.p = TRUE)
+chisqTest$p.value
+
+
+```
+
+Null Hypothesis: The observed distribution of jurors does not differ from what would be expected based on the population proportions.
+Test Statistic: I am using chi-squared test statistics to measure the difference between observed and expected frequencies. 
+P(T|H0) or P-value: p = 0.0144
+Since the p-value is less than 0.05 the observed jury distribution is different from the expected demographics so we reject the null hypothesis. This means that the jury selection may not be fair. Possible reasons for this is that there could be misrepresented jury pools before the selection even starts, there could be differences in the availability based on certain ethnic groups and many other smaller details that could add up to larger findings. 
+
+## **Question 4**
+
+```{r}
+
+brown_sentences <- readLines("brown_sentences.txt")
+
+letter_frequency <- read.csv("letter_frequencies.csv")
+
+letter_frequency$Probability <- letter_frequency$Probability / sum(letter_frequency$Probability)
+
+# Function to calculate the Chi-squared statistic for a given sentence
+calculateChi <- function(sentence, letterProb) {
+  
+  clean_sentence <- toupper(gsub("[^A-Za-z]", "", sentence))
+  
+  # Count occurrences of each letter in the cleaned sentence
+  observed_counts <- table(factor(strsplit(clean_sentence, "")[[1]], levels = letterProb$Letter))
+  
+  # Calculate expected counts
+  total_letters <- sum(observed_counts)
+  expected_counts <- total_letters * letterProb$Probability
+  
+  # Compute the Chi-squared statistic
+  chi_squared_stat <- sum((observed_counts - expected_counts)^2 / expected_counts, na.rm = TRUE)
+  
+  return(chi_squared_stat)
+}
+
+chi_squares <- sapply(brown_sentences, calculateChi, letter_frequency)
+
+hist(chi_squares, main = "Chi-squared Distribution of Brown Sentences", xlab = "Chi-squared Value", col = "lightblue")
+
+
+```
+
+
+```{r}
+# Create a vector with the ten sentences
+sentences <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+
+pValues <- c()
+chiSqrVals <- c()
+for (words in sentences){
+  chiSqrVal <- calculateChi(words,letter_frequency)
+  pValue <- sum(chi_squares >= chiSqrVal)/length(chi_squares)
+  pValues <- append(pValues, pValue)
+  chiSqrVals <- append(chiSqrVals, chiSqrVal)
+}
+pValues
+chiSqrVals
+```
+
+Based on the table above, the sentence likely to be produced by an LLM is the 6th one because it has a significantly higher Chi-squared value meaning that there is a substantial deviation from what is to be expected of letter frequency distributions. This is further reinforced by the low p-value score highlighting its irregularity.  
