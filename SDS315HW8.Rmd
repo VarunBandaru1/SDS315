@@ -1,0 +1,152 @@
+---
+title: "SDS315HW8"
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document: default
+date: "2025-04-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(ggplot2)
+library(rvest)
+library(dplyr)
+library(mosaic)
+library(MatchIt)
+library(dplyr)
+library(readr)
+library(broom)
+library(boot)
+library(purrr)
+
+```
+
+####Varun Bandaru  |  vvb287
+
+####link to github: https://github.com/VarunBandaru1/SDS315
+
+
+## ***Question 1***
+
+
+### **Part A**
+```{r}
+creatinine <- read.csv("creatinine.csv")
+
+lm1 <- lm(creatclear ~ age, data = creatinine)
+coef(lm1) %>% round(0)
+
+predict(lm1, newdata = data.frame(age = 55))
+
+```
+To estimate the creatinine clearance rate for a 55 year old patient, I fit a linear regression model with a creatinine clearance as the response and age as the predictor. The estimated regression equation was creatclear = 147.8129−0.6198⋅age. With this i predicted the clearance rate for the 55 year old to be 113.72 mL/minute.
+
+### **Part B**
+
+```{r}
+
+coef(lm1) %>% round(4)
+
+```
+
+The cahgne in creatinine clearance rate with age is represented by the slop of the regression line. The slope is estimate to be -0.6198, which means that for every year increase in age, the creatinine clearance rate decreased by approximately 0.62mL/minute per year. 
+
+### **Part C**
+
+```{r}
+
+predict_40 <- predict(lm1, newdata = data.frame(age = 40))
+predict_60 <- predict(lm1, newdata = data.frame(age = 60))
+
+residual_40 <- 135 - predict_40
+residual_60 <- 112 - predict_60
+
+cat("Residual (40 y/o):", residual_40, "\n")
+cat("Residual (60 y/o):", residual_60, "\n")
+```
+
+To determine who is healthier for their age, I compared the two patients. I calculated the predicted clearance rate for each of their ages using the regression model. This came out to 123.02 for the 40 year old and 111.38 for the 60 year old. Then I found the residuals by subtracting the predicted values from the actual values which gave me 11.98 for the 40 year old and 1.38 for the 60 year old. Therefore, the 40 year old has a much larger positive residual meaning they are performing significantly better thane expected for their age. So, the 40-year-old has the healthier creatinine clearance rate relative to their age.
+
+
+
+## ***Question 2***
+
+
+### ***Part A***
+```{r}
+covid <- read.csv("covid.csv")
+```
+
+```{r}
+italy <- covid %>% filter(country == "Italy")
+
+model_italy <- lm(log(deaths) ~ days_since_first_death, data = italy)
+
+growth_italy <- coef(model_italy)[2]
+
+boot_italy = do(10000)*lm(log(deaths) ~ (days_since_first_death), data = resample(italy))
+italy_interval <- confint(boot_italy, level = .95)
+growth_rate <- 0.183218
+doubling_time <- 70/(growth_rate*100)
+
+cat("Estimated growth rate for Italy:", round(growth_rate, 3), "\n")
+cat("Approximate doubling time for Italy:", round(doubling_time, 1), "days\n")
+
+spain <- covid %>% filter(country == "Spain")
+
+
+model_spain <- lm(log(deaths) ~ days_since_first_death, data = spain)
+
+growth_spain <- coef(model_spain)[2]
+boot_spain = do(10000)*lm(log(deaths) ~ (days_since_first_death), data = resample(spain))
+spain_interval <- confint(boot_spain, level = .95)
+growth_rate <- 0.2762447
+doubling_time <- 70/(growth_rate*100)
+
+cat("Estimated growth rate for Spain:", round(growth_spain, 3), "\n")
+cat("Approximate doubling time for Spain:", round(doubling_time, 1), "days\n")
+
+
+
+ggplot(covid) + geom_line(aes(x=days_since_first_death, y=deaths, color = country))+
+  labs(
+    x = "Days since first death",
+    y = "Deaths",
+    title = "Daily deaths over time in Italy and Spain"
+  )
+```
+
+
+
+
+
+## ***Question 3***
+```{r}
+milk <- read.csv("milk.csv")
+```
+
+```{r}
+milk <- milk %>% mutate(log_price = log(price),log_sales = log(sales))
+
+model_milk <- lm(log_sales ~ log_price, data = milk)
+
+
+elasticity <- coef(model_milk)["log_price"]
+
+
+boot_elasticity <- do(1000) * coef(lm(log(sales) ~ log(price), data = mosaic::resample(milk)))[[2]]
+colnames(boot_elasticity) <- "elasticity"
+
+elasticity_ci <- confint(boot_elasticity, level = 0.95)
+
+list(
+  price_elasticity = round(elasticity, 3),
+  price_elasticity_ci = elasticity_ci[c("lower", "upper")]
+)
+
+
+```
+
+To estimate the price elasticity of demand for milk, I used a log-log linear model: log(salaes) = A +B*log(price). The estimated slop from the model was -1.619, indicating that a 1% incrase in price leads to a 1.619% decrease in quantity of milk demanded. This suggests that milk demand is elastic meaning consumer are quite responsive to price changes. Furthermore, I bootstrapped to construct a 95% confidence interval for the elasticity estimate. The interval w3as [-1.780, -1.456], which confirms the elasticity is signifcantly less than -1 and that the demand for milk is indeed price sensitive. 
