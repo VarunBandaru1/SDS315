@@ -1,0 +1,173 @@
+---
+title: "Untitled"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: "2025-04-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(tidyverse)
+library(moderndive)
+library(effectsize)
+
+```
+
+####Varun Bandaru  |  vvb287
+
+####link to github: https://github.com/VarunBandaru1/SDS315
+
+
+## **Question 1**
+```{r}
+solder <- read.csv("solder.csv")
+
+```
+
+### **Part A**
+```{r}
+
+# Plot 1: Skips vs Opening
+ggplot(solder, aes(x = Opening, y = skips)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Skips by Solder Gun Opening Size",
+       x = "Solder Gun Opening (small/medium/large)",
+       y = "Number of Skips") +
+  theme_minimal()
+```
+This boxplot shows that the number of skips varies by opening size. Small openings tend to have fewer skips, while large openings tend to have more skips.
+
+```{r}
+# Plot 2: Skips vs Solder type
+ggplot(solder, aes(x = Solder, y = skips)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "Skips by Solder Alloy Thickness",
+       x = "Solder Thickness (thin/thick)",
+       y = "Number of Skips") +
+  theme_minimal()
+```
+This boxplot shows that thin solder alloy tends to result in fewer skips compared to thick solder alloy.
+
+### **Part B**
+
+```{r}
+model <- lm(skips ~ Opening * Solder, data = solder)
+
+summary(model)
+confint(model)
+```
+
+### **Part C**
+
+Intercept -- when using a large opening and thick solder, the expected number of skips is approximately 0.39.
+OpeningM -- Switching from a large to medium openig incrases the expected skips by about 2.41
+OpeningS -- Switching from a large to small opening increases the exptected skips by about 5.13
+SolderThin -- Using thin solder instead of thick incrases skips by about 2.28.
+OpeningM:solderThing -- For medium opening and Thin solder, the expected number of skips if 0.74 fewer than what we'd expect from simply adding the individual effects of Medium opening and thin solder. 
+OpeningS:SolderThin -- For Small opening and Thin solder, the expected number of skips is about 9.65 more than the additive effects of Small opening and Thin solder would suggest.
+
+### **Part D**
+
+Based on the regression model and the goal of minimizing skips I would recommend using a large opening with a thick solder. This combination has the lowest expected number of skips looking at the regression model, as its baseline condition and every other combination shows an increase in skips. 
+
+## ***Question 2***
+
+```{r}
+groceries <- read.csv("groceries.csv")
+```
+
+### **Part A**
+
+```{r}
+avg_price_store <- groceries %>%
+  group_by(Store) %>%
+  summarize(avg_price = mean(Price, na.rm = TRUE))
+
+ggplot(avg_price_store, aes(x = avg_price, y = fct_reorder(Store, avg_price))) +
+  geom_col(fill = "steelblue") +
+  labs(title = "Average Product Price by Store",
+       x = "Average Price ($)",
+       y = "Store") +
+  theme_minimal()
+
+```
+
+The bar chart shows the average price of products at each store. It shows that Convenience stores such as CVS and Walgreens tend to have higher average prices, while traditional grocery stores like H-E-B and Fiesta generally offer lower prices.
+
+### **Part B**
+
+```{r}
+stores_per_product <- groceries %>%
+  group_by(Product) %>%
+  summarise(num_stores = n_distinct(Store))
+
+
+ggplot(stores_per_product, aes(x = num_stores, y = fct_reorder(Product, num_stores))) +
+  geom_col(fill = "darkgreen") +
+  labs(title = "Number of Stores Selling Each Product",
+       x = "Number of Stores",
+       y = "Product") +
+  theme_minimal()
+
+products_in_all_16 <- stores_per_product %>%
+  filter(num_stores == 16)
+
+print(products_in_all_16)
+
+
+```
+
+
+### **Part C**
+
+```{r}
+
+model_c <- lm(Price ~ Product + Type, data = groceries)
+
+get_regression_table(model_c)
+
+```
+
+Compared to ordinary grocery stores, convenience stores typically charge 41 cents to 92 cents more for identical items.
+
+### **Part D**
+
+```{r}
+model_d <- lm(Price ~ Product + Store, data = groceries)
+
+get_regression_table(model_d)
+```
+
+When comparing identical products, Walmart and Kroger Fresh Fare emerge as the most affordable, whereas Wheatsville Food Co-Op and Whole Foods are among the most expensive.
+
+
+### **Part E**
+
+The Central Market charges slightly more than HEB for the same product, the difference being about 7 cents on average. The Central Market is estimated to charge 57 cents less than the baseline store while HEB charges 65 cents less than the baseline. 
+
+### **Part F**
+
+```{r}
+groceries <- groceries %>%
+  mutate(Income10K = Income / 10000)
+model_f <- lm(Price ~ Product + Income10K, data = groceries)
+get_regression_table(model_f)
+standardize_parameters(model_f)
+
+
+```
+
+Based on the negative coefficient for Income10K, consumers in lower-income ZIP codes appear to pay more for the same products, on average. The negative relationship indicates that as ZIP code income increases, product prices tend to decrease slightly. Specifically, a one-standard deviation increase in ZIP code income is associated with a 0.03 standard-deviation decrease in price, suggesting a modest but meaningful socioeconomic disparity in grocery pricing.
+
+## ***Question 3***
+
+Statement A: I believe that this is true because of the fact that in figure A1 there is a positive relationship between % Minority and FAIR policies per 100 housing units. Since the R^2 value is .516 we can say that this model explains 51.6% of the variation.
+Statement B: I believe this is false because in model B we can see that R^2 value for minority and age is (0.06) with the age coefficient not being statistically significant, p = 0.125. 
+Statement C: I believe this is false because in figure C1 we can see that the lines have very similar slopes. Furthermore, in model C we can see that the interaction term minority:fire_riskLow has a p-value of 0.839 meaning the difference in slopes is not statistically significant. 
+Statement D: I believe that this is false because in model D2 we see that the coefficient for minority remains statistically significant even after controlling for income meaning income does not fully explain the association between minority percentage and FAIR policies. 
+Statement E: I believe that this is true because model e controls for income, fire risk, and housing age, yet the minority percentage remains statistically significant. This indicates the association persists even after adjusting for these factors 
+
+
